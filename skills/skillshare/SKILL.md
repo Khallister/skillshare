@@ -9,7 +9,7 @@ description: |
   noninteractive automation, and guidance for the terminal UI.
 argument-hint: "[command] [target] [--json] [--dry-run] [-p|-g]"
 metadata:
-  version: v0.30.6
+  version: v0.30.13
 ---
 
 # Skillshare CLI
@@ -63,7 +63,8 @@ Check `skillshare <command> --help` if the installed version differs from these 
    skills or agents, sync the intended resource and scope. MCP and hooks mutations save source only
    unless `--sync` is supplied; `sync --all` also includes extras, MCP and hooks, but excludes plugins.
 3. **Inspect audit blocks.** Review findings before choosing an override. `install --json`
-   permits overwrite and selects all when no skill/agent filter is given, but retains
+   selects all when no skill/agent filter is given, preserves existing items unless
+   `--force` is supplied, and retains
    the audit gate; it is not merely an output format. Read [install.md](references/install.md)
    and [audit.md](references/audit.md) before using it for automation.
 4. **Use the matching recovery mechanism.** Uninstalled skills go to trash; native MCP
@@ -115,7 +116,9 @@ remote dependencies with `install` without a source. For full flag details and a
 read [install.md](references/install.md) and [sync.md](references/sync.md).
 
 To use a local skills checkout in place, run `skillshare link <path> --enable`, then
-`sync`; `skillshare unlink <name>` removes only the link. Read
+`sync`; `skillshare unlink <name>` moves only the link to trash and, in global mode,
+forgets its tracked-repository record and audit acceptances. A metadata warning means the link
+is gone but its record may remain; resolve the metadata error before installing again. Its target stays untouched. Read
 [TROUBLESHOOTING.md](references/TROUBLESHOOTING.md) for how such links are followed.
 
 ### Disable or remove
@@ -131,7 +134,12 @@ skillshare sync
 ```
 
 Run the requested operation, not this entire example sequence. Quote glob patterns so
-Skillshare receives them unchanged. Disabling uses ignore rules; uninstall uses trash.
+Skillshare receives them unchanged. Disabling uses ignore rules; when a `✗` line says "still enabled" or
+"still disabled", another rule decides that state, so edit the file it names.
+Uninstall of installed
+content uses trash. A global tracked declaration without a checkout is removed as
+metadata only, with no trash undo; see [install.md](references/install.md#uninstall)
+for canonical names, occupied paths, and the limit after reconcile.
 
 ### Move skills into folders
 
@@ -152,6 +160,7 @@ skillshare project list --json
 skillshare project localize ~/work/existing --dry-run
 skillshare project add ~/work/app --target claude,codex --skills-mode copy --dry-run
 skillshare project add ~/work/app --target claude,codex --skills-mode copy --sync
+skillshare project add ~/work/suite --scan . --scan .worktrees --target codex --dry-run
 skillshare project edit app --skills-include 'frontend-*'
 skillshare project sync app --json
 skillshare project remove app --dry-run --json
@@ -162,7 +171,9 @@ skillshare project remove app --dry-run --json
 `--machine-local` or `projects_storage: machine-local` (`--shared` overrides the setting);
 `localize` and `share` move one between the two. Removing a local copy of a `config.yaml`
 project keeps `config.yaml`'s version unless `--shared` is given. Edit filters replace lists. Removal detaches skills and keeps agent files;
-JSON removal requires `--yes` unless previewing. Read [targets.md](references/targets.md)
+JSON removal requires `--yes` unless previewing. `--scan DIR` also adds each Git checkout
+below DIR with the same settings and only adds; rerun it after a new clone or worktree.
+Read [targets.md](references/targets.md)
 for saved-then-sync failures, retries, and partial removal results.
 
 ### MCP settings
